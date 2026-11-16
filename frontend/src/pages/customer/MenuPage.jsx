@@ -51,8 +51,10 @@ const MenuPage = () => {
           axiosClient.get('/menu'),
           axiosClient.get('/menu/categories'),
         ]);
-        setMenuItems(menuRes.data || []);
-        setCategories(catRes.data || []);
+        const items = Array.isArray(menuRes) ? menuRes : (menuRes?.data || []);
+        const cats = Array.isArray(catRes) ? catRes : (catRes?.data || []);
+        setMenuItems(items);
+        setCategories(cats);
       } catch (err) {
         setError(err.message || 'Failed to load menu items');
       } finally {
