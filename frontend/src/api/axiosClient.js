@@ -27,6 +27,21 @@ const STORAGE_MENU = 'sr_demo_menu';
 const STORAGE_ORDERS = 'sr_demo_orders';
 const STORAGE_SETTINGS = 'sr_demo_settings';
 
+// Bump this when the shape of stored demo data changes so browsers holding
+// data from an older deploy start fresh instead of crashing.
+const STORAGE_VERSION_KEY = 'sr_demo_version';
+const STORAGE_VERSION = '2';
+try {
+  if (typeof window !== 'undefined' && localStorage.getItem(STORAGE_VERSION_KEY) !== STORAGE_VERSION) {
+    [STORAGE_MENU, STORAGE_ORDERS, STORAGE_SETTINGS, 'sr_cart', 'sr_last_order_id'].forEach((k) =>
+      localStorage.removeItem(k)
+    );
+    localStorage.setItem(STORAGE_VERSION_KEY, STORAGE_VERSION);
+  }
+} catch (e) {
+  // Storage unavailable (e.g. blocked cookies) – ignore
+}
+
 const getStoredMenu = () => {
   const saved = localStorage.getItem(STORAGE_MENU);
   if (!saved) {
@@ -34,10 +49,13 @@ const getStoredMenu = () => {
     return MOCK_MENU_ITEMS;
   }
   try {
-    return JSON.parse(saved);
+    const parsed = JSON.parse(saved);
+    if (Array.isArray(parsed)) return parsed.filter((m) => m && typeof m === 'object');
   } catch (e) {
-    return MOCK_MENU_ITEMS;
+    // fall through
   }
+  localStorage.setItem(STORAGE_MENU, JSON.stringify(MOCK_MENU_ITEMS));
+  return MOCK_MENU_ITEMS;
 };
 
 const getStoredOrders = () => {
@@ -47,10 +65,13 @@ const getStoredOrders = () => {
     return MOCK_ORDERS;
   }
   try {
-    return JSON.parse(saved);
+    const parsed = JSON.parse(saved);
+    if (Array.isArray(parsed)) return parsed.filter((o) => o && typeof o === 'object');
   } catch (e) {
-    return MOCK_ORDERS;
+    // fall through
   }
+  localStorage.setItem(STORAGE_ORDERS, JSON.stringify(MOCK_ORDERS));
+  return MOCK_ORDERS;
 };
 
 const getStoredSettings = () => {
@@ -61,7 +82,9 @@ const getStoredSettings = () => {
     return initial;
   }
   try {
-    return JSON.parse(saved);
+    const parsed = JSON.parse(saved);
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
+    return { restaurantName: 'Spice Route', gstPercentage: 5.0, tableCount: 20 };
   } catch (e) {
     return { restaurantName: 'Spice Route', gstPercentage: 5.0, tableCount: 20 };
   }
