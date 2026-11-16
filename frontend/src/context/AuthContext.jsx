@@ -8,8 +8,14 @@ const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(() => localStorage.getItem('sr_token'));
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('sr_user');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('sr_user');
+      const parsed = saved ? JSON.parse(saved) : null;
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch (e) {
+      localStorage.removeItem('sr_user');
+      return null;
+    }
   });
   const [tableNumber, setTableNumber] = useState(() => {
     return localStorage.getItem('sr_table') || '1';
@@ -23,9 +29,14 @@ export const AuthProvider = ({ children }) => {
       const savedUser = localStorage.getItem('sr_user');
 
       if (loginTime && savedUser) {
-        const parsedUser = JSON.parse(savedUser);
+        let parsedUser = null;
+        try {
+          parsedUser = JSON.parse(savedUser);
+        } catch (e) {
+          parsedUser = null;
+        }
         // Only customers expire after 2 hours
-        if (parsedUser.role === 'CUSTOMER') {
+        if (parsedUser?.role === 'CUSTOMER') {
           const elapsed = Date.now() - parseInt(loginTime, 10);
           if (elapsed > TWO_HOURS_MS) {
             logout();
